@@ -3,428 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extrator de PDFs</title>
+    <title>Extrator de Documentos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .card-header {
-            cursor: pointer;
-        }
-        .progress {
-            height: 20px;
-            margin-bottom: 5px;
-        }
-        .accordion-button:not(.collapsed) {
-            background-color: #e7f1ff;
-        }
-        .ocr-indicator {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 1rem;
-        }
-        .ocr-used {
-            background-color: #ffc107;
-        }
-        .ocr-not-used {
-            background-color: #198754;
-            color: white;
-        }
-        .pre-text {
-            white-space: pre-wrap;
-            word-break: break-word;
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .file-icon {
-            font-size: 1.2rem;
-            margin-right: 10px;
-        }
-        .info-card {
-            background-color: #e8f4f8;
-            border-left: 4px solid #0dcaf0;
-        }
-        .info-icon {
-            color: #0dcaf0;
-            font-size: 1.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <div class="container py-4">
-        <h1 class="mb-4"><i class="bi bi-file-earmark-pdf"></i> Extrator de Documentos</h1>
-        
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Token do Dropbox:</label>
-                    <input type="password" id="token" class="form-control" placeholder="Insira seu token de acesso">
-                    <div class="form-text">
-                        <a href="https://www.dropbox.com/developers/apps" target="_blank">Como obter um token Dropbox</a>
-                    </div>
-                </div>
-                <button id="btn-processar" class="btn btn-primary">
-                    <i class="bi bi-gear"></i>
-                    <span id="btn-text">Processar Documentos</span>
-                    <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
-                </button>
+    <div class="container py-5">
+        <div class="text-center mb-4">
+            <h1 class="mb-3"><i class="bi bi-file-earmark-pdf-fill text-danger"></i> Extrator de Documentos</h1>
+        </div>
+
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-gear"></i> Configuração
             </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Token do Dropbox:</label>
+                <input type="password" id="token" class="form-control" placeholder="Insira seu token">
+                </div>
+
+                <div class="mb-3">
+                <label class="form-label fw-bold">Escolha a pasta:</label>
+                <select id="select-pasta" class="form-select" disabled>
+                    <option>Carregando...</option>
+                </select>
+                </div>
+
+                <div class="mb-3">
+                <label class="form-label fw-bold">Escolha o arquivo:</label>
+                <select id="select-arquivo" class="form-select" disabled>
+                    <option>Selecione uma pasta primeiro</option>
+                </select>
+            </div>
+
         </div>
 
         <div id="result-container" class="d-none">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5><i class="bi bi-list-check"></i> Resultados:</h5>
-                <div>
-                    <div class="form-check form-switch d-inline-block me-3">
-                        <input class="form-check-input" type="checkbox" id="toggle-erros">
-                        <label class="form-check-label" for="toggle-erros">Mostrar apenas erros</label>
-                    </div>
-                    <div class="form-check form-switch d-inline-block">
-                        <input class="form-check-input" type="checkbox" id="toggle-ocr">
-                        <label class="form-check-label" for="toggle-ocr">Mostrar apenas OCR</label>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="progress-container" class="mb-3">
-                <div class="progress">
-                    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                </div>
-                <div id="progress-text" class="text-muted text-end small">0/0</div>
-            </div>
-            
             <div id="results" class="accordion"></div>
-            
-            <div class="mt-4 text-center">
-                <button id="btn-exportar" class="btn btn-outline-secondary d-none">
+
+            <div class="text-center mt-4">
+                <button id="btn-exportar" class="btn btn-outline-primary">
                     <i class="bi bi-download"></i> Exportar Resultados
                 </button>
             </div>
         </div>
     </div>
 
-    <script>
-        document.getElementById('btn-processar').addEventListener('click', async () => {
-            const token = document.getElementById('token').value;
-            if (!token) {
-                alert('Por favor, insira o token do Dropbox');
-                return;
-            }
-            
-            const btn = document.getElementById('btn-processar');
-            const spinner = document.getElementById('spinner');
-            const btnText = document.getElementById('btn-text');
-            
-            // Configurar estado de carregamento
-            spinner.classList.remove('d-none');
-            btnText.textContent = ' Processando...';
-            btn.disabled = true;
-            
-            // Mostrar container de resultados
-            const resultContainer = document.getElementById('result-container');
-            resultContainer.classList.remove('d-none');
-            document.getElementById('results').innerHTML = '';
-            document.getElementById('btn-exportar').classList.add('d-none');
-            
-            try {
-                // Atualizar barra de progresso
-                updateProgress(0, 0);
-                
-                const response = await fetch('/processar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `token=${encodeURIComponent(token)}`
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                exibirResultados(data.resultados);
-                document.getElementById('btn-exportar').classList.remove('d-none');
-            } catch (error) {
-                alert('Erro ao processar: ' + error.message);
-                document.getElementById('results').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle"></i> ${error.message}
-                    </div>
-                `;
-            } finally {
-                spinner.classList.add('d-none');
-                btnText.textContent = 'Processar Documentos';
-                btn.disabled = false;
-            }
-        });
-
-        function updateProgress(current, total) {
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            
-            if (total === 0) {
-                progressBar.style.width = '0%';
-                progressText.textContent = '0/0';
-                progressBar.className = 'progress-bar';
-                return;
-            }
-            
-            const percent = (current / total) * 100;
-            progressBar.style.width = `${percent}%`;
-            progressText.textContent = `${current}/${total}`;
-            
-            // Atualizar cores da barra de progresso
-            progressBar.classList.remove('bg-success', 'bg-warning', 'bg-danger');
-            if (percent === 100) {
-                progressBar.classList.add('bg-success');
-            } else if (percent > 70) {
-                progressBar.classList.add('bg-warning');
-            } else {
-                progressBar.classList.add('bg-primary');
-            }
-        }
-
-        function exibirResultados(resultados) {
-            const resultsContainer = document.getElementById('results');
-            resultsContainer.innerHTML = '';
-            
-            // Contadores para estatísticas
-            let sucessos = 0;
-            let erros = 0;
-            let comOcr = 0;
-            
-            resultados.forEach((resultado, index) => {
-                const accordionItem = document.createElement('div');
-                accordionItem.className = 'accordion-item';
-                
-                // Cabeçalho do accordion
-                const header = document.createElement('h2');
-                header.className = 'accordion-header';
-                header.id = `heading-${index}`;
-                
-                const button = document.createElement('button');
-                button.className = 'accordion-button collapsed';
-                button.type = 'button';
-                button.setAttribute('data-bs-toggle', 'collapse');
-                button.setAttribute('data-bs-target', `#collapse-${index}`);
-                button.setAttribute('aria-expanded', 'false');
-                button.setAttribute('aria-controls', `collapse-${index}`);
-                
-                // Ícone e informações do arquivo
-                let statusHTML = '';
-                if (resultado.status === 'sucesso') {
-                    statusHTML = `
-                        <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i></span>
-                        <span class="file-icon"><i class="bi bi-file-earmark-pdf"></i></span>
-                        <span class="me-2">${resultado.nome}</span>
-                        <span class="badge ${resultado.ocr_usado === 'Sim' ? 'ocr-used' : 'ocr-not-used'} me-2">
-                            ${resultado.ocr_usado === 'Sim' ? 'OCR' : 'Texto nativo'}
-                        </span>
-                        <span class="badge bg-info">${resultado.tempo}</span>
-                    `;
-                    sucessos++;
-                    if (resultado.ocr_usado === 'Sim') comOcr++;
-                } else {
-                    statusHTML = `
-                        <span class="badge bg-danger me-2"><i class="bi bi-x-circle"></i></span>
-                        <span class="file-icon"><i class="bi bi-file-earmark-pdf"></i></span>
-                        <span class="me-2">${resultado.nome}</span>
-                    `;
-                    erros++;
-                }
-                
-                button.innerHTML = statusHTML;
-                header.appendChild(button);
-                
-                // Corpo do accordion
-                const collapse = document.createElement('div');
-                collapse.id = `collapse-${index}`;
-                collapse.className = 'accordion-collapse collapse';
-                collapse.setAttribute('aria-labelledby', `heading-${index}`);
-                collapse.setAttribute('data-bs-parent', '#results');
-                
-                const body = document.createElement('div');
-                body.className = 'accordion-body';
-                
-                if (resultado.status === 'sucesso') {
-                    // Construir card de informações extraídas
-                    let infoHTML = '';
-                    const dados = resultado.dados || {};
-                    
-                    if (dados.nome_completo || dados.cpf || dados.data_nascimento) {
-                        infoHTML = `
-                            <div class="card info-card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title"><i class="bi bi-person-badge info-icon"></i> Informações Pessoais</h5>
-                                    <div class="row">
-                                        ${dados.nome_completo ? `
-                                        <div class="col-md-6 mb-2">
-                                            <strong>Nome Completo:</strong>
-                                            <div>${dados.nome_completo}</div>
-                                        </div>` : ''}
-                                        ${dados.cpf ? `
-                                        <div class="col-md-6 mb-2">
-                                            <strong>CPF:</strong>
-                                            <div>${dados.cpf}</div>
-                                        </div>` : ''}
-                                        ${dados.rg ? `
-                                        <div class="col-md-6 mb-2">
-                                            <strong>RG:</strong>
-                                            <div>${dados.rg}</div>
-                                        </div>` : ''}
-                                        ${dados.data_nascimento ? `
-                                        <div class="col-md-6 mb-2">
-                                            <strong>Data de Nascimento:</strong>
-                                            <div>${dados.data_nascimento}</div>
-                                        </div>` : ''}
-                                        ${dados.nome_mae ? `
-                                        <div class="col-md-12 mb-2">
-                                            <strong>Nome da Mãe:</strong>
-                                            <div>${dados.nome_mae}</div>
-                                        </div>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    if (dados.endereco || dados.cep) {
-                        infoHTML += `
-                            <div class="card info-card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title"><i class="bi bi-geo-alt info-icon"></i> Endereço</h5>
-                                    <div class="row">
-                                        ${dados.endereco ? `
-                                        <div class="col-md-8 mb-2">
-                                            <strong>Endereço:</strong>
-                                            <div>${dados.endereco}</div>
-                                        </div>` : ''}
-                                        ${dados.cep ? `
-                                        <div class="col-md-4 mb-2">
-                                            <strong>CEP:</strong>
-                                            <div>${dados.cep}</div>
-                                        </div>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    body.innerHTML = `
-                        <div class="mb-3">
-                            <strong>Tempo de processamento:</strong> ${resultado.tempo}
-                        </div>
-                        <div class="mb-3">
-                            <strong>Tecnologia usada:</strong> ${resultado.ocr_usado}
-                        </div>
-                        
-                        ${infoHTML || '<div class="alert alert-warning">Nenhuma informação estruturada identificada</div>'}
-                        
-                        <h6>Texto completo extraído:</h6>
-                        <div class="pre-text">${resultado.texto || 'Nenhum texto extraído'}</div>
-                    `;
-                } else {
-                    body.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="bi bi-bug"></i> <strong>Erro:</strong> ${resultado.erro}
-                        </div>
-                    `;
-                }
-                
-                collapse.appendChild(body);
-                accordionItem.appendChild(header);
-                accordionItem.appendChild(collapse);
-                resultsContainer.appendChild(accordionItem);
-                
-                // Atualizar barra de progresso
-                updateProgress(index + 1, resultados.length);
-            });
-            
-            // Atualizar barra de progresso final
-            updateProgress(resultados.length, resultados.length);
-            
-            // Adicionar resumo
-            const summary = document.createElement('div');
-            summary.className = 'alert alert-info mt-3';
-            summary.innerHTML = `
-                <i class="bi bi-info-circle"></i>
-                Processamento completo: 
-                <span class="badge bg-success">${sucessos} sucesso(s)</span>
-                <span class="badge bg-danger">${erros} erro(s)</span>
-                <span class="badge bg-warning">${comOcr} com OCR</span>
-            `;
-            resultsContainer.appendChild(summary);
-        }
-
-        // Filtros
-        document.getElementById('toggle-erros').addEventListener('change', function() {
-            filterResults();
-        });
-        
-        document.getElementById('toggle-ocr').addEventListener('change', function() {
-            filterResults();
-        });
-        
-        function filterResults() {
-            const showErrors = document.getElementById('toggle-erros').checked;
-            const showOcrOnly = document.getElementById('toggle-ocr').checked;
-            
-            const items = document.querySelectorAll('.accordion-item');
-            items.forEach(item => {
-                const isError = item.querySelector('.badge.bg-danger');
-                const isOcr = item.querySelector('.ocr-used');
-                
-                let shouldShow = true;
-                
-                if (showErrors && !isError) {
-                    shouldShow = false;
-                }
-                
-                if (showOcrOnly && !isOcr) {
-                    shouldShow = false;
-                }
-                
-                item.style.display = shouldShow ? 'block' : 'none';
-            });
-        }
-        
-        // Exportar resultados
-        document.getElementById('btn-exportar').addEventListener('click', function() {
-            const resultados = [];
-            document.querySelectorAll('.accordion-item').forEach(item => {
-                const nome = item.querySelector('.me-2')?.textContent.trim() || 'Arquivo';
-                const status = item.querySelector('.badge.bg-success') ? 'Sucesso' : 'Erro';
-                const texto = item.querySelector('.pre-text')?.textContent || '';
-                
-                resultados.push(`Arquivo: ${nome}\nStatus: ${status}\n\n${texto}\n\n${'-'.repeat(80)}\n`);
-            });
-            
-            const blob = new Blob([resultados.join('\n')], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'resultados-extração.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-
-        // Inicializar componentes Bootstrap
-        if (window.bootstrap) {
-            const collapseTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="collapse"]'));
-            collapseTriggerList.map(function (collapseTriggerEl) {
-                return new bootstrap.Collapse(collapseTriggerEl);
-            });
-        }
-    </script>
-
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

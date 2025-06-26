@@ -1,0 +1,14 @@
+body {
+    background-color: #f5f7fa;
+}
+.card {
+    border-radius: 12px;
+}
+.info-item input {
+    border: 1px solid #ced4da;
+    padding: 6px;
+}
+.info-card .card-title {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+}

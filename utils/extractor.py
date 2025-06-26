@@ -1,6 +1,6 @@
 import dropbox
 import os
-from pdf_utils import extrair_texto_pdf_com_ocr
+from utils.pdf_utils import extrair_texto_pdf_com_ocr
 import logging
 import time
 from dotenv import load_dotenv

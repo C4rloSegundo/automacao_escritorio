@@ -1,11 +1,38 @@
 from flask import Flask, render_template, request, jsonify
-from extractor import processar_pdfs
+from utils.extractor import processar_pdfs
 import logging
+from flask import Flask, request, jsonify
+import dropbox
 
 app = Flask(__name__)
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
+
+@app.route("/listar_pastas")
+def listar_pastas():
+    token = request.args.get("token")
+    dbx = dropbox.Dropbox(token)
+    pastas = set()
+
+    for entry in dbx.files_list_folder("").entries:
+        if isinstance(entry, dropbox.files.FolderMetadata):
+            pastas.add(entry.name)
+
+    return jsonify(sorted(pastas))
+
+@app.route("/listar_arquivos")
+def listar_arquivos():
+    token = request.args.get("token")
+    pasta = request.args.get("pasta")
+    dbx = dropbox.Dropbox(token)
+    arquivos = []
+
+    for entry in dbx.files_list_folder("/" + pasta).entries:
+        if isinstance(entry, dropbox.files.FileMetadata):
+            arquivos.append(entry.name)
+
+    return jsonify(sorted(arquivos))
 
 @app.route("/", methods=["GET"])
 def index():
