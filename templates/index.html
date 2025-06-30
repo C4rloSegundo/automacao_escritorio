@@ -18,25 +18,32 @@
             <div class="card-header bg-primary text-white">
                 <i class="bi bi-gear"></i> Configuração
             </div>
-            <div class="mb-3">
-                <label class="form-label fw-bold">Token do Dropbox:</label>
-                <input type="password" id="token" class="form-control" placeholder="Insira seu token">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Token do Dropbox:</label>
+                    <input type="password" id="token" class="form-control" placeholder="Insira seu token">
                 </div>
 
                 <div class="mb-3">
-                <label class="form-label fw-bold">Escolha a pasta:</label>
-                <select id="select-pasta" class="form-select" disabled>
-                    <option>Carregando...</option>
-                </select>
+                    <label class="form-label fw-bold">Escolha a pasta:</label>
+                    <select id="select-pasta" class="form-select" disabled>
+                        <option>Carregando...</option>
+                    </select>
                 </div>
 
                 <div class="mb-3">
-                <label class="form-label fw-bold">Escolha o arquivo:</label>
-                <select id="select-arquivo" class="form-select" disabled>
-                    <option>Selecione uma pasta primeiro</option>
-                </select>
+                    <label class="form-label fw-bold">Escolha o arquivo:</label>
+                    <select id="select-arquivo" class="form-select" disabled>
+                        <option>Selecione uma pasta primeiro</option>
+                    </select>
+                </div>
+
+                <button id="btn-processar" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-play-circle"></i>
+                    <span id="btn-text">Processar Documentos</span>
+                    <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
             </div>
-
         </div>
 
         <div id="result-container" class="d-none">
