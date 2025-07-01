@@ -88,7 +88,6 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
 
         if (data.error) throw new Error(data.error);
         exibirResultados(data.resultados);
-        configurarBotaoExportar();
         document.getElementById('btn-exportar').classList.remove('d-none');
     } catch (error) {
         alert('Erro ao processar: ' + error.message);
@@ -162,52 +161,7 @@ function exibirResultados(resultados) {
 
 // Gera a procuração em PDF
 
-// document.getElementById('btn-exportar').addEventListener('click', () => {
-//     const { jsPDF } = window.jspdf;
-
-//     document.querySelectorAll('.accordion-item').forEach((item, idx) => {
-//         const doc = new jsPDF();
-//         const nome = document.getElementById(`nome_completo-${idx}`)?.value || 'NOME';
-//         const cpf = document.getElementById(`cpf-${idx}`)?.value || 'CPF';
-//         const rg = document.getElementById(`rg-${idx}`)?.value || 'RG';
-//         const dataNascimento = document.getElementById(`data_nascimento-${idx}`)?.value || 'DATA';
-//         const endereco = document.getElementById(`endereco-${idx}`)?.value || 'ENDEREÇO';
-
-//         const hoje = new Date().toLocaleDateString('pt-BR');
-
-//         const texto = `
-// PROCURAÇÃO
-
-// Eu, ${nome}, inscrito(a) no CPF sob o nº ${cpf}, portador(a) do RG nº ${rg},
-// nascido(a) em ${dataNascimento}, residente à ${endereco}, nomeio e constituo como
-// meu bastante procurador o(a) Sr(a) _________________________________________,
-// com poderes para me representar perante órgãos públicos, privados, cartórios,
-// e onde mais se fizer necessário.
-
-// Feira de Santana - BA, ${hoje}.
-//         `;
-
-//         doc.setFont("Times", "normal");
-//         doc.setFontSize(12);
-//         const linhas = doc.splitTextToSize(texto.trim(), 180);
-//         doc.text(linhas, 15, 20);
-
-//         const pdfBlob = doc.output("blob");
-//         const url = URL.createObjectURL(pdfBlob);
-//         window.open(url, '_blank');
-//     });
-// });
-
-function configurarBotaoExportar() {
-
-    const { jsPDF } = window.jspdf;
-    const botao = document.getElementById('btn-exportar');
-
-    botao.removeEventListener('click', gerarPDF); // evitar múltiplos listeners
-    botao.addEventListener('click', gerarPDF);
-}
-
-function gerarPDF() {
+document.getElementById('btn-exportar').addEventListener('click', () => {
     const { jsPDF } = window.jspdf;
 
     document.querySelectorAll('.accordion-item').forEach((item, idx) => {
@@ -219,6 +173,7 @@ function gerarPDF() {
         const endereco = document.getElementById(`endereco-${idx}`)?.value || 'ENDEREÇO';
 
         const hoje = new Date().toLocaleDateString('pt-BR');
+
         const texto = `
 PROCURAÇÃO
 
@@ -240,4 +195,4 @@ Feira de Santana - BA, ${hoje}.
         const url = URL.createObjectURL(pdfBlob);
         window.open(url, '_blank');
     });
-}
+});
