@@ -1,5 +1,5 @@
 // === main.js ===
-
+console.log("main.js carregado")
 // Carrega as pastas do Dropbox após inserção do token
 document.getElementById('token').addEventListener('change', async () => {
     const token = document.getElementById('token').value;
